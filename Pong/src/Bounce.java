@@ -1,4 +1,4 @@
-package Pong;
+// package Pong;
 
 public class Bounce {
     public static void main(String[] args){
