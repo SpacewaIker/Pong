@@ -26,17 +26,26 @@ public class BallSimulation extends GraphicsProgram{
      * SLEEP, TICK:        delay time (ms) and clock increment (0.1 ms)
      */
 
+    private static final boolean TEST = false;
+    private static final boolean DEBUG = true;
+    private static final boolean noBounce = false;
+
     // Screen dimensions
     private static final int WIDTH = 1280;
     private static final int HEIGHT = 600;
     private static final int OFFSET = 200;
 
-    // World and screen parameters
+    // Ping pong table dimensions
+    private static final double ppTableLen = 2.74;
+    private static final double ppTableHgt = 1.52;
+    private static final double lWall = 0.05;
+    private static final double rWall = 2.69;
 
+    // World and screen parameters
     private static final double XMin = 0;
-    private static final double XMax = 2.74;
+    private static final double XMax = ppTableLen;
     private static final double YMin = 0;
-    private static final double YMax = 1.52;
+    private static final double YMax = ppTableHgt;
     private static final int xMin = 0;
     private static final int xMax = WIDTH;
     private static final int yMin = 0;
@@ -56,19 +65,23 @@ public class BallSimulation extends GraphicsProgram{
     public static final double tDflt = 30;
     public static final int SLEEP = 10;
     public static final double TICK = SLEEP/1000.0;
+    public static final double eThreshold = 0.001;
 
     /**
      * Declaration of variables
      * 
      * Inputs:
-     * v0: initial velocity, theta: launch angle, x0/y0: initial position
+     * v0:    initial velocity
+     * theta: launch angle
+     * x0/y0: initial position
+     * eLoss: energy loss coefficient
      * 
      * Program variables:
      * time, vTerminal: terminal velocity,
      * vX/vY: initial x and y components of velocity
      */
 
-    double v0, theta, x0, y0;
+    double v0, theta, x0, y0, eLoss;
     double time, vTerminal, v0X, v0Y;
 
     public static void main(String[] args){
@@ -83,13 +96,23 @@ public class BallSimulation extends GraphicsProgram{
         gPlane.setColor(Color.BLACK);
         gPlane.setFilled(true);
         add(gPlane);
+        
+        // Create left and right walls
+        GRect lWallPlane = new GRect(0, 0, 3, HEIGHT);
+        lWallPlane.setColor(Color.BLUE);
+        lWallPlane.setFilled(true);
+        add(lWallPlane);
+
+        GRect rWallPlane = new GRect(WIDTH - 25, 0, 3, HEIGHT);
+        rWallPlane.setColor(Color.RED);
+        rWallPlane.setFilled(true);
+        add(rWallPlane);
 
         // Create the ball
         GPoint p = W2S(new GPoint(xInit, yInit));
         // GPoint p = W2S(new GPoint(0, 0));
         double ScrX = p.getX();
         double ScrY = p.getY();
-        System.out.println("Initial ball pos" + ScrX + "\t" + ScrY);
         GOval ball = new GOval(ScrX, ScrY, 2 * bSize * Xs, 2 * bSize * Ys);
         ball.setColor(Color.RED);
         ball.setFilled(true);
@@ -100,6 +123,7 @@ public class BallSimulation extends GraphicsProgram{
         // Get input from user
         v0 = readDouble(" Enter initial velocity: ");
         theta = readDouble("Enter launch angle: ");
+        eLoss = readDouble("Enter energy loss coefficient: ");
 
         // Initialize program variables
         x0 = xInit;
@@ -110,31 +134,95 @@ public class BallSimulation extends GraphicsProgram{
         v0Y = v0 * Math.sin(theta * Math.PI / 180);
 
         // Simulation loop (update values until hits ground)
-        boolean falling = true;
+        boolean running = true;
 
-        System.out.println("\t\t\t Ball Position and Velocity");
+        if (TEST)
+            System.out.println("\t\t\t Ball Position and Velocity");
 
         double X, Y, vX, vY;
+        double PE, KEx, KEy;
 
-        while (falling){
+        while (running){
             // Update values
             X = v0X * vTerminal / g * (1 - Math.exp(-g * time / vTerminal));
             Y = vTerminal / g * (v0Y + vTerminal) *
                 (1 - Math.exp(-g * time / vTerminal)) - vTerminal * time;
             vX = v0X * Math.exp(-g * time / vTerminal);
             vY = (v0Y + vTerminal) * Math.exp(-g * time / vTerminal) - vTerminal;
-        
-            // Print values
-            System.out.printf(
-                "t: %.2f\t\t x: %.2f\t y: %.2f\t vx: %.2f\t vy: %.2f\n",
-                time, (X + x0), (Y + y0), vX, vY
-            );
+
+            // Print values if TEST
+            if (TEST)
+                System.out.printf(
+                    "t: %.2f\t\t x: %.2f\t y: %.2f\t vx: %.2f\t vy: %.2f\n",
+                    time, (X + x0), (Y + y0), vX, vY
+                );
             pause(SLEEP);
 
-            // Check if ball hit the ground
-            if (Y + y0 < bSize)
-                falling = false;
-            
+            if (noBounce && Y + y0 < bSize)
+                running = false;
+
+            // Check for collisions:
+            // Compute energy of the ball
+            KEx = bMass * vX * vX * 0.5 * (1 - eLoss);
+            KEy = bMass * vY * vY * 0.5 * (1 - eLoss);
+            PE = bMass * g * Y;
+
+            // Check for simulation end
+            if ((KEx + KEy + PE) < eThreshold){
+                running = false;
+                if (DEBUG)
+                    System.out.println("Energy Threshold reached");
+            }
+
+            // Collision with floor
+            if (vY < 0 && y0 + Y < bSize){
+                // From energy, compute new velocity
+                v0X = Math.sqrt(2 * KEx / bMass);
+                v0Y = Math.sqrt(2 * KEy / bMass);
+
+                if (vX < 0)
+                    v0X = -v0X;
+
+                // Reinitialize time and motion parameters
+                time = 0;
+                x0 += X;
+                y0 = bSize;
+                X = 0;
+                Y = 0;
+            }
+            // Collision with left wall
+            if (vX < 0 && x0 + X <= lWall + bSize){
+                // From energy, compute new velocity
+                v0X = Math.sqrt(2 * KEx / bMass);
+                v0Y = Math.sqrt(2 * KEy / bMass);
+
+                if (vY < 0)
+                    v0Y = -v0Y;
+                
+                // Reinitialize time and motion parameters
+                time = 0;
+                x0 = bSize;
+                y0 += Y;
+                X = 0;
+                Y = 0;
+            }
+            // Collision with right wall
+            if (vX > 0 && x0 + X >= rWall - bSize){
+                // From energy, compute new velocity
+                v0X = -Math.sqrt(2 * KEx / bMass);
+                v0Y = Math.sqrt(2 * KEy / bMass);
+
+                if (vY < 0)
+                    v0Y = -v0Y;
+                
+                // Reinitialize time and motion parameters
+                time = 0;
+                x0 = rWall - bSize;
+                y0 += Y;
+                X = 0;
+                Y = 0;
+            }
+
             // Update ball position, plot tick mark at current pos:
             // current pos in screen coordinates
             p = W2S(new GPoint(x0 + X - bSize, y0 + Y + bSize));
@@ -156,7 +244,7 @@ public class BallSimulation extends GraphicsProgram{
         return new GPoint(x, y);
     }
     private void trace(double ScrX, double ScrY){
-        GOval dot = new GOval(ScrX, ScrY, ptDia, ptDia);
+        GOval dot = new GOval(ScrX + bSize * Xs, ScrY + bSize * Ys, ptDia, ptDia);
         add(dot);
     }
 }
