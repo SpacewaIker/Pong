@@ -13,6 +13,12 @@ public class BallSimulation extends GraphicsProgram{
     /**
      * Initialization of constants
      * 
+     * Debug & testing booleans:
+     * TEST: if true, print t, x, y, vx and vy for each iteration of the loop
+     * DEBUG: if true, print debugging statements
+     * SLOW: if true, slows down the simulation (without affecting the physics calculations)
+     * noBounce: if true, simulation stops after reaching the ground (will still bounce on sides)
+     * 
      * World/screen parameters:
      * Uppercase X/Y are world values, lowercase x/y are screen values
      * Xs/Ys: ?
@@ -27,7 +33,8 @@ public class BallSimulation extends GraphicsProgram{
      */
 
     private static final boolean TEST = false;
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
+    private static final boolean SLOW = false;
     private static final boolean noBounce = false;
 
     // Screen dimensions
@@ -59,13 +66,13 @@ public class BallSimulation extends GraphicsProgram{
     public static final double k = 0.1316;
     public static final double bSize = 0.02;
     public static final double bMass = 0.0027;
-    public static final double xInit = 0;
+    public static final double xInit = lWall;
     public static final double yInit = YMax/2;
     public static final double vDflt = 3;
     public static final double tDflt = 30;
     public static final int SLEEP = 10;
     public static final double TICK = SLEEP/1000.0;
-    public static final double eThreshold = 0.001;
+    public static final double eThreshold = 0.0005;
 
     /**
      * Declaration of variables
@@ -82,7 +89,7 @@ public class BallSimulation extends GraphicsProgram{
      */
 
     double v0, theta, x0, y0, eLoss;
-    double time, vTerminal, v0X, v0Y;
+    double simTime, time, vTerminal, v0X, v0Y;
 
     public static void main(String[] args){
         new BallSimulation().start();
@@ -90,6 +97,16 @@ public class BallSimulation extends GraphicsProgram{
     public void run(){
         // Initialize window size
         this.resize(WIDTH, HEIGHT + OFFSET);
+        this.resize(2*WIDTH - getWidth(), 2*(HEIGHT + OFFSET) - getHeight());
+        /* EXPLANATION: I have found that resize() would not resize exactly
+            to the right width and height, probably due to the window
+            header and other such things (I have talked to TA Katrina Poulin
+            about this issue). This would result in a constant (but different
+            between PCs) difference between the target size and the actual size.
+            The above code first resizes the window, then resizes a second
+            time, but adding the (target-actual) difference to resize
+            to the actual target size. Note that if this difference was = 0,
+            (2*WIDTH - getWidth()) would be equal to WIDTH. */
 
         // Create ground plane
         GRect gPlane = new GRect(0, HEIGHT, WIDTH + OFFSET, 3);
@@ -98,37 +115,86 @@ public class BallSimulation extends GraphicsProgram{
         add(gPlane);
         
         // Create left and right walls
-        GRect lWallPlane = new GRect(0, 0, 3, HEIGHT);
+        GRect lWallPlane = new GRect(lWall * Xs, 0, 1, HEIGHT);
         lWallPlane.setColor(Color.BLUE);
         lWallPlane.setFilled(true);
         add(lWallPlane);
 
-        GRect rWallPlane = new GRect(WIDTH - 25, 0, 3, HEIGHT);
+        GRect rWallPlane = new GRect(rWall * Xs - 1, 0, 1, HEIGHT);
         rWallPlane.setColor(Color.RED);
         rWallPlane.setFilled(true);
         add(rWallPlane);
 
         // Create the ball
         GPoint p = W2S(new GPoint(xInit, yInit));
-        // GPoint p = W2S(new GPoint(0, 0));
         double ScrX = p.getX();
         double ScrY = p.getY();
-        GOval ball = new GOval(ScrX, ScrY, 2 * bSize * Xs, 2 * bSize * Ys);
+        GOval ball = new GOval(ScrX, ScrY, 2 * bSize * Xs, 2 * bSize * Xs);
+        // Since Xs != Ys, using Xs for both width and height makes the ball round
         ball.setColor(Color.RED);
         ball.setFilled(true);
         add(ball);
 
-        pause(1000);
+        pause(500);
+
+        // Labels initialization
+        // Mode labels:
+        if (TEST){
+            GLabel testModeLabel = new GLabel("TEST MODE", 800, HEIGHT + 60);
+            testModeLabel.setColor(new Color(0, 180, 0)); // dark green
+            testModeLabel.setFont("-24");
+            add(testModeLabel);
+        }
+        if (DEBUG){
+            GLabel debugModeLabel = new GLabel("DEBUG MODE", 1000, HEIGHT + 60);
+            debugModeLabel.setColor(Color.RED);
+            debugModeLabel.setFont("-24");
+            add(debugModeLabel);
+        }
+        if (SLOW){
+            GLabel slowModeLabel = new GLabel("SLOW MODE", 800, HEIGHT + 140);
+            slowModeLabel.setColor(Color.BLUE);
+            slowModeLabel.setFont("-24");
+            add(slowModeLabel);
+        }
+        if (noBounce){
+            GLabel noBounceModeLabel = new GLabel(
+                "NO BOUNCE MODE", 1000, HEIGHT + 140
+            );
+            noBounceModeLabel.setColor(Color.ORANGE);
+            noBounceModeLabel.setFont("-24");
+            add(noBounceModeLabel);
+        }
+
+        // Parameter labels:
+        GLabel simTimeLabel = new GLabel("Simulation Time: 0.0 s", 30, HEIGHT + 50);
+        simTimeLabel.setFont("-24");
+        add(simTimeLabel);
+        GLabel velocityLabel = new GLabel("Initial velocity:", 30, HEIGHT + 90);
+        velocityLabel.setFont("-24");
+        add(velocityLabel);
+        GLabel angleLabel = new GLabel("Launch angle:", 30, HEIGHT + 130);
+        angleLabel.setFont("-24");
+        add(angleLabel);
+        GLabel eLossLabel = new GLabel("Energy loss coefficient:", 30, HEIGHT + 170);
+        eLossLabel.setFont("-24");
+        add(eLossLabel);
 
         // Get input from user
-        v0 = readDouble(" Enter initial velocity: ");
-        theta = readDouble("Enter launch angle: ");
-        eLoss = readDouble("Enter energy loss coefficient: ");
+        v0 = new myDialogProgram().readDouble("Enter initial velocity");
+        velocityLabel.setLabel("Initial velocity:  " + v0 + " m/s");
+
+        theta = new myDialogProgram().readDouble("Enter launch angle");
+        angleLabel.setLabel("Launch angle:  " + theta + (char) 176);
+
+        eLoss = new myDialogProgram().readDouble("Enter energy loss coefficient");
+        eLossLabel.setLabel("Energy loss coefficient:  " + eLoss);
 
         // Initialize program variables
         x0 = xInit;
         y0 = yInit;
         time = 0;
+        simTime = 0;
         vTerminal = bMass * g / (4 * Math.PI * bSize * bSize * k);
         v0X = v0 * Math.cos(theta * Math.PI / 180);
         v0Y = v0 * Math.sin(theta * Math.PI / 180);
@@ -156,7 +222,11 @@ public class BallSimulation extends GraphicsProgram{
                     "t: %.2f\t\t x: %.2f\t y: %.2f\t vx: %.2f\t vy: %.2f\n",
                     time, (X + x0), (Y + y0), vX, vY
                 );
-            pause(SLEEP);
+            // Simulation sleep (if SLOW, pauses for 1s instead of SLEEP)
+            if (SLOW)
+                pause(1000);
+            else
+                pause(SLEEP);
 
             if (noBounce && Y + y0 < bSize)
                 running = false;
@@ -165,7 +235,13 @@ public class BallSimulation extends GraphicsProgram{
             // Compute energy of the ball
             KEx = bMass * vX * vX * 0.5 * (1 - eLoss);
             KEy = bMass * vY * vY * 0.5 * (1 - eLoss);
-            PE = bMass * g * Y;
+            PE = bMass * g * (Y + y0 - 2*bSize);
+            /* PE must be evaluated from the ground, which is 2*bSize, not from 0. */
+            if (DEBUG)
+                System.out.printf(
+                    "KEx: %.4f\t KEy: %.4f\t PE: %.4f\t Total: %.4f\n",
+                    KEx, KEy, PE, (KEx + KEy + PE)
+                );
 
             // Check for simulation end
             if ((KEx + KEy + PE) < eThreshold){
@@ -175,18 +251,19 @@ public class BallSimulation extends GraphicsProgram{
             }
 
             // Collision with floor
-            if (vY < 0 && y0 + Y < bSize){
+            if (vY < 0 && y0 + Y < 2*bSize){
                 // From energy, compute new velocity
                 v0X = Math.sqrt(2 * KEx / bMass);
                 v0Y = Math.sqrt(2 * KEy / bMass);
 
+                // v0Y is always positive, v0X is of the same sign as before
                 if (vX < 0)
                     v0X = -v0X;
 
                 // Reinitialize time and motion parameters
                 time = 0;
                 x0 += X;
-                y0 = bSize;
+                y0 = 2*bSize;
                 X = 0;
                 Y = 0;
             }
@@ -196,12 +273,13 @@ public class BallSimulation extends GraphicsProgram{
                 v0X = Math.sqrt(2 * KEx / bMass);
                 v0Y = Math.sqrt(2 * KEy / bMass);
 
+                // v0Y is of the same sign as before, v0X is always positive
                 if (vY < 0)
                     v0Y = -v0Y;
                 
                 // Reinitialize time and motion parameters
                 time = 0;
-                x0 = bSize;
+                x0 = lWall;
                 y0 += Y;
                 X = 0;
                 Y = 0;
@@ -212,12 +290,13 @@ public class BallSimulation extends GraphicsProgram{
                 v0X = -Math.sqrt(2 * KEx / bMass);
                 v0Y = Math.sqrt(2 * KEy / bMass);
 
+                // v0Y is of the same sign as before, v0X is always negative
                 if (vY < 0)
                     v0Y = -v0Y;
                 
                 // Reinitialize time and motion parameters
                 time = 0;
-                x0 = rWall - bSize;
+                x0 = rWall - 2*bSize;
                 y0 += Y;
                 X = 0;
                 Y = 0;
@@ -225,13 +304,20 @@ public class BallSimulation extends GraphicsProgram{
 
             // Update ball position, plot tick mark at current pos:
             // current pos in screen coordinates
-            p = W2S(new GPoint(x0 + X - bSize, y0 + Y + bSize));
+            p = W2S(new GPoint(x0 + X, y0 + Y));
+            /* ball.setLocation requires upper-left corner position,
+               and trace as well (it adds the ball size itself)*/
             ScrX = p.getX();
             ScrY = p.getY();
             ball.setLocation(ScrX, ScrY);
             trace(ScrX, ScrY);
 
             time += TICK;
+            simTime += TICK;
+
+            simTimeLabel.setLabel(
+                String.format("Simulation time: %.2f s", simTime)
+            );
         }
     }
     GPoint W2S(GPoint P) {
@@ -246,5 +332,10 @@ public class BallSimulation extends GraphicsProgram{
     private void trace(double ScrX, double ScrY){
         GOval dot = new GOval(ScrX + bSize * Xs, ScrY + bSize * Ys, ptDia, ptDia);
         add(dot);
+    }
+}
+class myDialogProgram extends DialogProgram{
+    public void run(){
+        this.resize(300, 200);
     }
 }
