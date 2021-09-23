@@ -1,35 +1,37 @@
-/**
- * A java program simulating a bouncing ping-pong ball.
- * This program uses the acm.jar package.
- * 
- * @author SpacewaIker
- */
-
 import java.awt.Color;
 import acm.graphics.*;
 import acm.program.*;
 
+/**
+ * A java program simulating a bouncing ping-pong ball.
+ * This program uses the acm.jar package.
+ * 
+ * The BallSimulation class is based on code written by Prof. Frank Ferrie,
+ * as part of the Fall 2021 Assignment 1.
+ * 
+ * @author SpacewaIker
+ */
+
 public class BallSimulation extends GraphicsProgram{
-    /**
-     * Initialization of constants
-     * 
-     * Debug & testing booleans:
-     * TEST: if true, print t, x, y, vx and vy for each iteration of the loop
-     * DEBUG: if true, print debugging statements
-     * SLOW: if true, slows down the simulation (without affecting the physics calculations)
-     * noBounce: if true, simulation stops after reaching the ground (will still bounce on sides)
-     * 
-     * World/screen parameters:
-     * Uppercase X/Y are world values, lowercase x/y are screen values
-     * Xs/Ys: ?
-     * ptDia: trace point diameter
-     * 
-     * Simulation parameters:
-     * g, k:               gravitational and air friction constants
-     * bSize, bMass:       radius (m) and mass (kg) of the ball
-     * xInit, yInit:       initial x and y position of the ball (m)
-     * vDflt, tDflt:       default velocity (m/s) and angle (degrees) of ball
-     * SLEEP, TICK:        delay time (ms) and clock increment (0.1 ms)
+    /* Initialization of constants
+     
+     Debug & testing booleans:
+     TEST:     if true, print t, x, y, vx and vy for each iteration of the loop
+     DEBUG:    if true, print debugging statements & Energy for each iteration
+     SLOW:     if true, slows down the simulation (without affecting the physics calculations)
+     noBounce: if true, simulation stops after reaching the ground (will still bounce on sides)
+     
+     World/screen parameters:
+     Uppercase X/Y are world values, lowercase x/y are screen values
+     Xs/Ys: scale factors. I.e. x = X * Xs
+     ptDia: trace point diameter
+     
+     Simulation parameters:
+     g, k:               gravitational and air friction constants
+     bSize, bMass:       radius (m) and mass (kg) of the ball
+     xInit, yInit:       initial x and y position of the ball (m)
+     SLEEP, TICK:        delay time (ms) and clock increment (0.1 ms)
+     eThreshold:         Energy threshold below which the simulation will stop
      */
 
     private static final boolean TEST = false;
@@ -68,24 +70,23 @@ public class BallSimulation extends GraphicsProgram{
     public static final double bMass = 0.0027;
     public static final double xInit = lWall;
     public static final double yInit = YMax/2;
-    public static final double vDflt = 3;
-    public static final double tDflt = 30;
     public static final int SLEEP = 10;
     public static final double TICK = SLEEP/1000.0;
     public static final double eThreshold = 0.0005;
 
-    /**
-     * Declaration of variables
-     * 
-     * Inputs:
-     * v0:    initial velocity
-     * theta: launch angle
-     * x0/y0: initial position
-     * eLoss: energy loss coefficient
-     * 
-     * Program variables:
-     * time, vTerminal: terminal velocity,
-     * vX/vY: initial x and y components of velocity
+    /*Declaration of variables
+     
+     Inputs:
+     v0:    initial velocity
+     theta: launch angle
+     x0/y0: initial position
+     eLoss: energy loss coefficient
+     
+     Program variables:
+     time:      time measured since last bounce
+     simTime:   total time of simulation
+     vTerminal: terminal velocity,
+     v0X/v0Y:   initial x and y components of velocity
      */
 
     double v0, theta, x0, y0, eLoss;
@@ -140,54 +141,37 @@ public class BallSimulation extends GraphicsProgram{
         // Labels initialization
         // Mode labels:
         if (TEST){
-            GLabel testModeLabel = new GLabel("TEST MODE", 800, HEIGHT + 60);
+            GLabel testModeLabel = createGLabel("TEST MODE", 800, HEIGHT + 60);
             testModeLabel.setColor(new Color(0, 180, 0)); // dark green
-            testModeLabel.setFont("-24");
-            add(testModeLabel);
         }
         if (DEBUG){
-            GLabel debugModeLabel = new GLabel("DEBUG MODE", 1000, HEIGHT + 60);
+            GLabel debugModeLabel = createGLabel("DEBUG MODE", 1000, HEIGHT + 60);
             debugModeLabel.setColor(Color.RED);
-            debugModeLabel.setFont("-24");
-            add(debugModeLabel);
         }
         if (SLOW){
-            GLabel slowModeLabel = new GLabel("SLOW MODE", 800, HEIGHT + 140);
+            GLabel slowModeLabel = createGLabel("SLOW MODE", 800, HEIGHT + 140);
             slowModeLabel.setColor(Color.BLUE);
-            slowModeLabel.setFont("-24");
-            add(slowModeLabel);
         }
         if (noBounce){
-            GLabel noBounceModeLabel = new GLabel(
-                "NO BOUNCE MODE", 1000, HEIGHT + 140
-            );
+            GLabel noBounceModeLabel = createGLabel(
+                "NO BOUNCE MODE", 1000, HEIGHT + 140);
             noBounceModeLabel.setColor(Color.ORANGE);
-            noBounceModeLabel.setFont("-24");
-            add(noBounceModeLabel);
         }
 
         // Parameter labels:
-        GLabel simTimeLabel = new GLabel("Simulation Time: 0.0 s", 30, HEIGHT + 50);
-        simTimeLabel.setFont("-24");
-        add(simTimeLabel);
-        GLabel velocityLabel = new GLabel("Initial velocity:", 30, HEIGHT + 90);
-        velocityLabel.setFont("-24");
-        add(velocityLabel);
-        GLabel angleLabel = new GLabel("Launch angle:", 30, HEIGHT + 130);
-        angleLabel.setFont("-24");
-        add(angleLabel);
-        GLabel eLossLabel = new GLabel("Energy loss coefficient:", 30, HEIGHT + 170);
-        eLossLabel.setFont("-24");
-        add(eLossLabel);
+        GLabel simTimeLabel = createGLabel("Simulation Time: 0.0 s", 30, HEIGHT + 50);
+        GLabel velocityLabel = createGLabel("Initial velocity:", 30, HEIGHT + 90);
+        GLabel angleLabel = createGLabel("Launch angle:", 30, HEIGHT + 130);
+        GLabel eLossLabel = createGLabel("Energy loss coefficient:", 30, HEIGHT + 170);
 
         // Get input from user
-        v0 = new myDialogProgram().readDouble("Enter initial velocity");
+        v0 = new myDialogProgram().readDouble("Enter initial velocity (m/s)");
         velocityLabel.setLabel("Initial velocity:  " + v0 + " m/s");
 
-        theta = new myDialogProgram().readDouble("Enter launch angle");
-        angleLabel.setLabel("Launch angle:  " + theta + (char) 176);
+        theta = new myDialogProgram().readDouble("Enter launch angle (degrees)");
+        angleLabel.setLabel("Launch angle:  " + theta + (char) 176); //-> °
 
-        eLoss = new myDialogProgram().readDouble("Enter energy loss coefficient");
+        eLoss = new myDialogProgram().readDouble("Enter energy loss coefficient [0, 1]");
         eLossLabel.setLabel("Energy loss coefficient:  " + eLoss);
 
         // Initialize program variables
@@ -231,12 +215,12 @@ public class BallSimulation extends GraphicsProgram{
             if (noBounce && Y + y0 < bSize)
                 running = false;
 
-            // Check for collisions:
+            // Check for collisions & simulation end:
             // Compute energy of the ball
             KEx = bMass * vX * vX * 0.5 * (1 - eLoss);
             KEy = bMass * vY * vY * 0.5 * (1 - eLoss);
             PE = bMass * g * (Y + y0 - 2*bSize);
-            /* PE must be evaluated from the ground, which is 2*bSize, not from 0. */
+            /* PE must be evaluated from the ground, which is 2*bSize, not 0. */
             if (DEBUG)
                 System.out.printf(
                     "KEx: %.4f\t KEy: %.4f\t PE: %.4f\t Total: %.4f\n",
@@ -305,8 +289,6 @@ public class BallSimulation extends GraphicsProgram{
             // Update ball position, plot tick mark at current pos:
             // current pos in screen coordinates
             p = W2S(new GPoint(x0 + X, y0 + Y));
-            /* ball.setLocation requires upper-left corner position,
-               and trace as well (it adds the ball size itself)*/
             ScrX = p.getX();
             ScrY = p.getY();
             ball.setLocation(ScrX, ScrY);
@@ -320,7 +302,13 @@ public class BallSimulation extends GraphicsProgram{
             );
         }
     }
-    GPoint W2S(GPoint P) {
+    /**
+     * Converts world coordinates into simulation (pixel) coordinates
+     * 
+     * @param P the world coordinates
+     * @return simulation coordinates
+     */
+    private GPoint W2S(GPoint P) {
         double X = P.getX();
         double Y = P.getY();
 
@@ -329,13 +317,35 @@ public class BallSimulation extends GraphicsProgram{
 
         return new GPoint(x, y);
     }
+    /**
+     * Adds a small black dot at the specified location.
+     * The dot has diameter {@code ptDia}
+     * 
+     * @param ScrX the x coordinate (in pixels)
+     * @param ScrY the y coordinate (in pixels)
+     */
     private void trace(double ScrX, double ScrY){
         GOval dot = new GOval(ScrX + bSize * Xs, ScrY + bSize * Ys, ptDia, ptDia);
         add(dot);
     }
-}
-class myDialogProgram extends DialogProgram{
-    public void run(){
-        this.resize(300, 200);
+    /**
+     * Creates a GLabel with a font size of 24 pt. The GLabel is also added to
+     * the canvas.
+     * 
+     * @param text The text of the GLabel
+     * @param x The x position
+     * @param y The y position
+     * @return GLabel with font size 24 pt, added to the canvas
+     */
+    private GLabel createGLabel(String text, int x, int y){
+        GLabel label = new GLabel(text, x, y);
+        label.setFont("-24");
+        add(label);
+        return label;
     }
+}
+/**
+ * An extension of {@code DialogProgram} that can be instantiated.
+ */
+class myDialogProgram extends DialogProgram{
 }
