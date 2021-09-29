@@ -35,8 +35,8 @@ public class BallSimulation extends GraphicsProgram{
      */
 
     private static final boolean TEST = false;
-    private static final boolean DEBUG = false;
-    private static final boolean SLOW = false;
+    private static final boolean DEBUG =  false;
+    private static final boolean SLOW = true;
     private static final boolean noBounce = false;
 
     // Screen dimensions
@@ -94,6 +94,8 @@ public class BallSimulation extends GraphicsProgram{
 
     public static void main(String[] args){
         new BallSimulation().start();
+        /* main() and start() methods are needed for other IDEs than Eclipse.
+            But this does not affect how the code runs in Eclipse */
     }
     public void run(){
         // Initialize window size
@@ -269,7 +271,7 @@ public class BallSimulation extends GraphicsProgram{
                 Y = 0;
             }
             // Collision with right wall
-            if (vX > 0 && x0 + X >= rWall - bSize){
+            if (vX > 0 && x0 + X >= rWall - 2*bSize){
                 // From energy, compute new velocity
                 v0X = -Math.sqrt(2 * KEx / bMass);
                 v0Y = Math.sqrt(2 * KEy / bMass);
