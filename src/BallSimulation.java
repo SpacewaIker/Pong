@@ -36,7 +36,7 @@ public class BallSimulation extends GraphicsProgram{
 
     private static final boolean TEST = false;
     private static final boolean DEBUG =  false;
-    private static final boolean SLOW = true;
+    private static final boolean SLOW = false;
     private static final boolean noBounce = false;
 
     // Screen dimensions
