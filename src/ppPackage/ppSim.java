@@ -2,15 +2,35 @@ package ppPackage;
 
 import static ppPackage.ppSimParams.*;
 import acm.program.GraphicsProgram;
-import acm.program.DialogProgram;
+import acm.util.ErrorException;
+import acm.io.IODialog;
 import java.awt.Color;
 
+/**
+ * A program simulating a bouncing ping-pong ball. This program uses the
+ * acm.jar package. It is the main class of the {@code ppPackage} package, and
+ * imports the other classes of the package, namely {@code ppBall},
+ * {@code ppTable}, and {@code ppSimParams.}
+ * 
+ * The {@code ppSim} class is based on code written by Prof. Frank Ferrie,
+ * as part of the Fall 2021 Assignment 2.
+ * 
+ * @author SpacewaIker
+ */
 public class ppSim extends GraphicsProgram{
     private ppTable myTable;
 
+    /**
+     * Entry point of the program.
+     */
     public static void main(String[] args){
         new ppSim().start(args);
     }
+    /**
+     * Main program process. The {@code ppTable} is instantiated, the
+     * {@code IODialog} used to get user input is also instantiated, the user
+     * is asked for input, the {@code ppBall} is instantiated.
+     */
     public void run(){
         this.resize(XWIDTH, YHEIGHT + OFFSET);
         this.resize(2*XWIDTH - getWidth(), 2*(YHEIGHT + OFFSET) - getHeight());
@@ -28,13 +48,30 @@ public class ppSim extends GraphicsProgram{
         myTable = new ppTable(this);
 
         // get data from user
-        double Vo = new myDialogProgram().readDouble("Enter initial velocity (m/s)");
+        IODialog ioDialog = new IODialog();
+        ioDialog.setExceptionOnError(true);
+        // Will raise an exception for invalid inputs
+
+        double Vo = ioDialog.readDouble("Enter initial velocity (m/s)");
         myTable.setVelLabel(Vo);
 
-        double theta = new myDialogProgram().readDouble("Enter launch angle (degrees)");
+        double theta = ioDialog.readDouble("Enter launch angle (degrees)");
         myTable.setAngleLabel(theta);
 
-        double eLoss = new myDialogProgram().readDouble("Enter energy loss coefficient [0, 1]");
+        double eLoss;
+        /* Loop over try/catch block until eLoss input is valid.
+            ioDialog.readDouble() will raise an acm.util.ErrorException if the
+            input is invalid. */
+        while (true){
+            try {
+                eLoss = ioDialog.readDouble(
+                    "Enter energy loss coefficient [0, 1]", 0, 1); // 0, 1 -> range of inputs
+                break;
+            } catch (ErrorException e){
+                ioDialog.showErrorMessage(
+                    "The energy loss coefficient must be between 0 and 1.");
+            }
+        }
         myTable.setELossLabel(eLoss);
 
         // Create ball
@@ -43,7 +80,7 @@ public class ppSim extends GraphicsProgram{
         myBall.start();
     }
     /**
-     * This class is needed for the {@code myTable.simTimeLabel} to be
+     * This method is needed for the {@code myTable.simTimeLabel} to be
      * accessible from the {@code ppBall} class.
      *
      * @param simTime The simulation time to which {@code myTable.simTimeLabel}
@@ -52,9 +89,4 @@ public class ppSim extends GraphicsProgram{
     public void setSimTimeLabel(double simTime){
         this.myTable.setSimTimeLabel(simTime);
     }
-}
-/**
- * An extension of {@code DialogProgram} that can be instantiated.
- */
-class myDialogProgram extends DialogProgram{
 }

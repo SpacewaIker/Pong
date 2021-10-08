@@ -5,6 +5,15 @@ import acm.graphics.GLabel;
 import acm.graphics.GRect;
 import java.awt.Color;
 
+/**
+ * A class representing the ping pong table on which the {@code ppBall} will
+ * bounce. This class creates the walls/floor and the {@code GLabel}s.
+ * 
+ * The {@code ppTable} class is based on code written by Prof. Frank Ferrie,
+ * as part of the Fall 2021 Assignment 2.
+ * 
+ * @author SpacewaIker
+ */
 public class ppTable {
     private ppSim gProgram;
     private GLabel simTimeLabel;
@@ -12,6 +21,14 @@ public class ppTable {
     private GLabel angleLabel;
     private GLabel eLossLabel;
 
+    /**
+     * The constructor parameter is set as an instance variable. The parameter
+     * and "mode" {@code GLabel}s are instantiated. The walls and floor are
+     * created.
+     * 
+     * @param GProgram The surface/canvas/program on which the walls, floor,
+     *      and {@code GLabel}s will be added.
+     */
     public ppTable(ppSim GProgram){
         this.gProgram = GProgram;
 

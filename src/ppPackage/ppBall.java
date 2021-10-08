@@ -4,6 +4,15 @@ import java.awt.Color;
 import acm.graphics.GOval;
 import acm.graphics.GPoint;
 
+/**
+ * A class representing a bouncing ball. This class extends {@ acm.Thread},
+ * meaning that multiple {@code ppBall}s can run at the same time.
+ * 
+ * The {@code ppBall} class is based on code written by Prof. Frank Ferrie,
+ * as part of the Fall 2021 Assignment 2.
+ * 
+ * @author SpacewaIker
+ */
 public class ppBall extends Thread{
     // Parameters recieved through the constructor:
     private ppSim gProgram;
@@ -23,6 +32,17 @@ public class ppBall extends Thread{
     private double x0, y0;
     private double simTime, time, vTerminal, v0X, v0Y;
 
+    /**
+     * All the following constructor parameters are set as instance variables.
+     * 
+     * @param Xinit The x component of the ball's initial position (in m)
+     * @param Yinit The y component of the ball's initial position (in m)
+     * @param Vo The initial velocity of the ball (in m/s)
+     * @param theta The launch angle of the ball (in degrees, from x+ axis)
+     * @param eLoss The energy loss coefficient (in interval (0, 1))
+     * @param color The color of the ball
+     * @param GProgram The surface/canvas/program that must be paused
+     */
     public ppBall(double Xinit, double Yinit, double Vo, double theta,
                   double eLoss, Color color, ppSim GProgram){
 
@@ -34,6 +54,12 @@ public class ppBall extends Thread{
         this.eLoss = eLoss;
         this.color = color;
     }
+    /**
+     * Main class/program loop. This is the simulation loop, where the position
+     * is computed at each time, the ball position is visually updated, and the
+     * {@code ppSim} program is paused. Since {@code ppBall} extends
+     * {@code Thread}, multiple balls can run at the same time.
+     */
     public void run(){
         // Create the ball
         GPoint p = W2S(new GPoint(Xinit, Yinit));
