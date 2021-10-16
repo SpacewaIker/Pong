@@ -131,7 +131,7 @@ public class ppTable {
      */
     public void setAngleLabel(double angle){
         this.angleLabel.setLabel(
-            String.format("Launch angle: %.1f", angle) + (char) 176);//-> °
+            String.format("Launch angle: %.1f\260", angle)); // 0o260 = 176 -> °
     }
     /**
      * Setter for the {@code eLossLabel}
