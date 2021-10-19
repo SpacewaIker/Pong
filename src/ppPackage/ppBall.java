@@ -149,7 +149,7 @@ public class ppBall extends Thread{
                 Y = 0;
             }
             // Collision with left wall
-            if (vX < 0 && x0 + X <= XwallL + bSize){
+            if (vX < 0 && x0 + X <= XwallL){
                 // From energy, compute new velocity
                 v0X = Math.sqrt(2 * KEx / bMass);
                 v0Y = Math.sqrt(2 * KEy / bMass);

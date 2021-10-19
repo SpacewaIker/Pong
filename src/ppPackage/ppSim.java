@@ -47,6 +47,12 @@ public class ppSim extends GraphicsProgram{
         // Create table:
         myTable = new ppTable(this);
 
+        // Set ball color labels
+        if (TWOBALLS){
+            myTable.setBallLabelL("red");
+            myTable.setBallLabelR("blue");
+        }
+
         // get data from user
         IODialog ioDialog = new IODialog();
         ioDialog.setExceptionOnError(true);
@@ -78,6 +84,14 @@ public class ppSim extends GraphicsProgram{
         ppBall myBall = new ppBall(
             Xinit, Yinit, Vo, theta, eLoss, Color.RED, this);
         myBall.start();
+
+        // Right ball
+        if (TWOBALLS){
+            ppBall myBall2 = new ppBall(
+                XwallR - 2*bSize, Yinit, Vo, 180 - theta, eLoss, Color.BLUE, this);
+            myBall2.start();
+        }
+        // 180 - theta: angle flipped
     }
     /**
      * This method is needed for the {@code myTable.simTimeLabel} to be

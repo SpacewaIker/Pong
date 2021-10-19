@@ -15,6 +15,7 @@ public class ppSimParams {
     public static final boolean DEBUG = false;
     public static final boolean TEST = false;
     public static final boolean NOBOUNCE = false;
+    public static final boolean TWOBALLS = true;
 
     // Screen size parameters (in pixels)
     public static final int XWIDTH = 1280;
