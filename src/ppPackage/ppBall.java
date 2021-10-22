@@ -5,17 +5,19 @@ import acm.graphics.GOval;
 import acm.graphics.GPoint;
 
 /**
- * A class representing a bouncing ball. This class extends {@ acm.Thread},
+ * A class representing a bouncing ball. This class extends {@code Thread},
  * meaning that multiple {@code ppBall}s can run at the same time.
  * 
  * The {@code ppBall} class is based on code written by Prof. Frank Ferrie,
- * as part of the Fall 2021 Assignment 2.
+ * as part of the Fall 2021 Assignment 3.
  * 
  * @author SpacewaIker
  */
 public class ppBall extends Thread{
     // Parameters recieved through the constructor:
     private ppSim gProgram;
+    private ppTable myTable;
+    private ppPaddle rightPaddle;
     private double Xinit;
     private double Yinit;
     private double Vo;
@@ -25,12 +27,9 @@ public class ppBall extends Thread{
 
     private GOval ball;
 
-    // if SLOW, sleep for 1000 ms otherwise 10 ms
-    private final int SLEEP = (SLOW) ? 1000 : 10;
-
     // Simulation parameters
     private double x0, y0;
-    private double simTime, time, vTerminal, v0X, v0Y;
+    private double time, vTerminal, v0X, v0Y;
 
     /**
      * All the following constructor parameters are set as instance variables.
@@ -44,23 +43,17 @@ public class ppBall extends Thread{
      * @param GProgram The surface/canvas/program that must be paused
      */
     public ppBall(double Xinit, double Yinit, double Vo, double theta,
-                  double eLoss, Color color, ppSim GProgram){
+                  double eLoss, Color color, ppTable myTable, ppSim GProgram){
 
         this.gProgram = GProgram;
+        this.myTable = myTable;
         this.Xinit = Xinit;
         this.Yinit = Yinit;
         this.Vo = Vo;
         this.theta = theta;
         this.eLoss = eLoss;
         this.color = color;
-    }
-    /**
-     * Main class/program loop. This is the simulation loop, where the position
-     * is computed at each time, the ball position is visually updated, and the
-     * {@code ppSim} program is paused. Since {@code ppBall} extends
-     * {@code Thread}, multiple balls can run at the same time.
-     */
-    public void run(){
+
         // Create the ball
         GPoint p = W2S(new GPoint(Xinit, Yinit));
         double ScrX = p.getX();
@@ -70,23 +63,26 @@ public class ppBall extends Thread{
         this.ball.setColor(color);
         this.ball.setFilled(true);
         this.gProgram.add(this.ball);
-
+    }
+    /**
+     * Main class/program loop. This is the simulation loop, where the position
+     * is computed at each time, the ball position is visually updated, and the
+     * {@code ppSim} program is paused. Since {@code ppBall} extends
+     * {@code Thread}, multiple balls can run at the same time.
+     */
+    public void run(){
         // Simulation:
 
         // Initialize program variables
         x0 = Xinit;
         y0 = Yinit;
         time = 0;
-        simTime = 0;
         vTerminal = bMass * g / (4 * Math.PI * bSize * bSize * k);
         v0X = Vo * Math.cos(theta * Math.PI / 180);
         v0Y = Vo * Math.sin(theta * Math.PI / 180);
 
         // Simulation loop (update values until hits ground)
         boolean running = true;
-
-        if (TEST)
-            System.out.println("\t\t\t Ball Position and Velocity");
 
         double X, Y, vX, vY;
         double PE, KEx, KEy;
@@ -99,18 +95,8 @@ public class ppBall extends Thread{
             vX = v0X * Math.exp(-g * time / vTerminal);
             vY = (v0Y + vTerminal) * Math.exp(-g * time / vTerminal) - vTerminal;
 
-            // Print values if TEST
-            if (TEST)
-                System.out.printf(
-                    "t: %.2f\t\t x: %.2f\t y: %.2f\t vx: %.2f\t vy: %.2f\n",
-                    time, (X + x0), (Y + y0), vX, vY
-                );
-
             // Simulation sleep
-            this.gProgram.pause(SLEEP);
-
-            if (NOBOUNCE && Y + y0 < 2*bSize)
-                running = false;
+            this.gProgram.pause(TICK * TSCALE);
 
             // Check for collisions & simulation end:
             // Compute energy of the ball
@@ -118,17 +104,20 @@ public class ppBall extends Thread{
             KEy = bMass * vY * vY * 0.5 * (1 - eLoss);
             PE = bMass * g * (Y + y0 - 2*bSize);
             /* PE must be evaluated from the ground, which is 2*bSize, not 0. */
-            if (DEBUG)
-                System.out.printf(
-                    "KEx: %.4f\t KEy: %.4f\t PE: %.4f\t Total: %.4f\n",
-                    KEx, KEy, PE, (KEx + KEy + PE)
-                );
 
-            // Check for simulation end
+            // Check for simulation end via threshold
             if ((KEx + KEy + PE) < ETHR){
                 running = false;
-                if (DEBUG)
+                if (MESG)
                     System.out.println("Energy Threshold reached");
+                this.gProgram.reset();
+            }
+            // Check for simulation end by going out of the screen
+            if (x0 + X > ppTableXlen){
+                running = false;
+                if (MESG)
+                    System.out.println("Ball went out of frame");
+                this.gProgram.reset();
             }
 
             // Collision with floor
@@ -165,13 +154,13 @@ public class ppBall extends Thread{
                 X = 0;
                 Y = 0;
             }
-            // Collision with right wall
-            if (vX > 0 && x0 + X >= XwallR - 2*bSize){
+            // Collision with right paddle
+            if (vX > 0 && this.rightPaddle.contact(x0 + X + bSize, y0 + Y)){
                 // From energy, compute new velocity
                 v0X = -Math.sqrt(2 * KEx / bMass);
                 v0Y = Math.sqrt(2 * KEy / bMass);
 
-                // v0Y is of the same sign as before, v0X is always negative
+                // v0Y is of the same sign as before, v0X is always positive
                 if (vY < 0)
                     v0Y = -v0Y;
                 
@@ -181,20 +170,28 @@ public class ppBall extends Thread{
                 y0 += Y;
                 X = 0;
                 Y = 0;
+
+                // Add kinetic energy from the paddle
+                v0X *= ppPaddleXgain;
+                v0Y *= ppPaddleYgain;
+
+                // Change y velocity sign if paddle is moving and add extra velocity
+                int sign = this.rightPaddle.getSignVy();
+                if (sign == 1 || sign == -1)
+                    v0Y = Math.abs(v0Y) * sign * Math.sqrt(Math.abs(
+                        this.rightPaddle.getVelocity().getY()));
+                    
             }
 
             // Update ball position, plot tick mark at current pos:
             // current pos in screen coordinates
-            p = W2S(new GPoint(x0 + X, y0 + Y));
-            ScrX = p.getX();
-            ScrY = p.getY();
-            ball.setLocation(ScrX, ScrY);
+            GPoint p = W2S(new GPoint(x0 + X, y0 + Y));
+            double ScrX = p.getX();
+            double ScrY = p.getY();
+            this.ball.setLocation(ScrX, ScrY);
             trace(ScrX, ScrY);
 
             time += TICK;
-            simTime += TICK;
-
-            this.gProgram.setSimTimeLabel(simTime);
         }
     }
     /**
@@ -208,5 +205,8 @@ public class ppBall extends Thread{
         GOval dot = new GOval(ScrX + bSize * Xs, ScrY + bSize * Ys, PD, PD);
         dot.setColor(this.color);
         this.gProgram.add(dot);
+    }
+    public void setRightPaddle(ppPaddle paddle){
+        this.rightPaddle = paddle;
     }
 }

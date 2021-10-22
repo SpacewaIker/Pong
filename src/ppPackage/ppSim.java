@@ -2,23 +2,26 @@ package ppPackage;
 
 import static ppPackage.ppSimParams.*;
 import acm.program.GraphicsProgram;
-import acm.util.ErrorException;
-import acm.io.IODialog;
+import acm.util.RandomGenerator;
 import java.awt.Color;
+import java.awt.event.MouseEvent;
+import acm.graphics.GPoint;
 
 /**
  * A program simulating a bouncing ping-pong ball. This program uses the
  * acm.jar package. It is the main class of the {@code ppPackage} package, and
  * imports the other classes of the package, namely {@code ppBall},
- * {@code ppTable}, and {@code ppSimParams.}
+ * {@code ppTable}, {@code ppPaddle}, and {@code ppSimParams.}
  * 
  * The {@code ppSim} class is based on code written by Prof. Frank Ferrie,
- * as part of the Fall 2021 Assignment 2.
+ * as part of the Fall 2021 Assignment 3.
  * 
  * @author SpacewaIker
  */
 public class ppSim extends GraphicsProgram{
     private ppTable myTable;
+    private ppBall myBall;
+    private ppPaddle myPaddle;
 
     /**
      * Entry point of the program.
@@ -44,63 +47,50 @@ public class ppSim extends GraphicsProgram{
             to the actual target size. Note that if this difference was = 0,
             (2*WIDTH - getWidth()) would be equal to WIDTH. */
         
+        // Clear canvas (in case of reset)
+        removeAll();
+
+        // Mouse listener and random generator
+        addMouseListeners();
+        RandomGenerator rgen = RandomGenerator.getInstance();
+        rgen.setSeed(System.currentTimeMillis());
+        // rgen.setSeed(RSEED);
+
         // Create table:
-        myTable = new ppTable(this);
+        this.myTable = new ppTable(this);
 
-        // Set ball color labels
-        if (TWOBALLS){
-            myTable.setBallLabelL("red");
-            myTable.setBallLabelR("blue");
-        }
+        // Generate random values for Yinit, Vo, theta, eLoss
+        Color iColor = Color.RED;
+        double iYinit = rgen.nextDouble(YinitMIN, YinitMAX);
+        double ieLoss = rgen.nextDouble(eLossMIN, eLossMAX);
+        double iVel =   rgen.nextDouble(VoMIN, VoMAX);
+        double iTheta = rgen.nextDouble(thetaMIN, thetaMAX);
 
-        // get data from user
-        IODialog ioDialog = new IODialog();
-        ioDialog.setExceptionOnError(true);
-        // Will raise an exception for invalid inputs
+        // Create ball and paddle
+        this.myBall = new ppBall(
+            Xinit, iYinit, iVel, iTheta, ieLoss, iColor, this.myTable, this);
+        this.myPaddle = new ppPaddle(ppPaddleXinit, ppPaddleYinit, this.myTable);
+        this.myBall.setRightPaddle(this.myPaddle);
 
-        double Vo = ioDialog.readDouble("Enter initial velocity (m/s)");
-        myTable.setVelLabel(Vo);
-
-        double theta = ioDialog.readDouble("Enter launch angle (degrees)");
-        myTable.setAngleLabel(theta);
-
-        double eLoss;
-        /* Loop over try/catch block until eLoss input is valid.
-            ioDialog.readDouble() will raise an acm.util.ErrorException if the
-            input is invalid. */
-        while (true){
-            try {
-                eLoss = ioDialog.readDouble(
-                    "Enter energy loss coefficient [0, 1]", 0, 1); // 0, 1 -> range of inputs
-                break;
-            } catch (ErrorException e){
-                ioDialog.showErrorMessage(
-                    "The energy loss coefficient must be between 0 and 1.");
-            }
-        }
-        myTable.setELossLabel(eLoss);
-
-        // Create ball
-        ppBall myBall = new ppBall(
-            Xinit, Yinit, Vo, theta, eLoss, Color.RED, this);
-        myBall.start();
-
-        // Right ball
-        if (TWOBALLS){
-            ppBall myBall2 = new ppBall(
-                XwallR - 2*bSize, Yinit, Vo, 180 - theta, eLoss, Color.BLUE, this);
-            myBall2.start();
-        }
-        // 180 - theta: angle flipped
+        // Start ball and paddle
+        // pause(STARTDELAY);
+        // this.myBall.start();
+        // this.myPaddle.start();
+        this.myPaddle.start();
+        waitForClick();
+        this.myBall.start();
     }
     /**
-     * This method is needed for the {@code myTable.simTimeLabel} to be
-     * accessible from the {@code ppBall} class.
-     *
-     * @param simTime The simulation time to which {@code myTable.simTimeLabel}
-     *      must be set.
+     * Mouse Handler - a moved event moves the paddle up and down in Y
      */
-    public void setSimTimeLabel(double simTime){
-        this.myTable.setSimTimeLabel(simTime);
+    public void mouseMoved(MouseEvent e){
+        GPoint Pm = S2W(new GPoint(e.getX(), e.getY()));
+        double PaddleX = myPaddle.getLocation().getX();
+        double PaddleY = Pm.getY();
+        myPaddle.setLocation(new GPoint(PaddleX, PaddleY));
+    }
+    public void reset(){
+        waitForClick();
+        this.run();
     }
 }

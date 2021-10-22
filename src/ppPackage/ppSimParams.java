@@ -1,21 +1,22 @@
 package ppPackage;
+import java.lang.invoke.CallSite;
+
 import acm.graphics.GPoint;
 
 /**
  * This class includes most constant parameters needed for this project.
  * 
  * Part of this class is based on code written by Prof. Frank Ferrie,
- * as part of the Fall 2021 Assignment 2.
+ * as part of the Fall 2021 Assignment 3.
  * 
  * @author SpacewaIker
  */
 public class ppSimParams {
-    // Booleans for testing and debugging
+    // Booleans for testing and debugging and other modes
     public static final boolean SLOW = false;
-    public static final boolean DEBUG = false;
-    public static final boolean TEST = false;
-    public static final boolean NOBOUNCE = false;
-    public static final boolean TWOBALLS = true;
+    public static final boolean SUPERSLOW = false;
+    public static final boolean MESG = true;
+    public static final int STARTDELAY = 1000;
 
     // Screen size parameters (in pixels)
     public static final int XWIDTH = 1280;
@@ -59,6 +60,30 @@ public class ppSimParams {
     public static final double Yinit = Ymax/2;
 
     public static final int PD = 1;
+    // Time scale: if slow, the simulation runs 100 times slower
+    // public static final double TSCALE = (SLOW) ? 1000*100 : 1000;
+    public static final double TSCALE = (SUPERSLOW) ? 100000 : (SLOW) ? 10000 : 1000;
+
+
+    // Paddle parameters
+    static final double ppPaddleH = 8 * 2.54/100;
+    static final double ppPaddleW = 0.5 * 2.54/100;
+    static final double ppPaddleXinit = XwallR - ppPaddleW/2;
+    static final double ppPaddleYinit = Yinit;
+    static final double ppPaddleXgain = 2;
+    static final double ppPaddleYgain = 1.5;
+
+    // Parameters used by ppSim
+    static final double YinitMAX = 0.75 * Ymax;
+    static final double YinitMIN = 0.25 * Ymax;
+    static final double eLossMAX = 0.2;
+    static final double eLossMIN = 0.2;
+    static final double VoMAX = 5;
+    static final double VoMIN = 5;
+    static final double thetaMAX = 45;
+    static final double thetaMIN = 0;
+    // Random number generator seed
+    static final long RSEED = 8976232;
 
     /**
      * Converts world coordinates into simulation (pixel) coordinates
@@ -74,5 +99,20 @@ public class ppSimParams {
         double y = ymax - (Y - Ymin) * Ys;
 
         return new GPoint(x, y);
+    }
+    /**
+     * Converts simulation (pixel) coordinates world coordinates
+     * 
+     * @param P the simulation coordinates
+     * @return world coordinates
+     */
+    static GPoint S2W(GPoint P) {
+        double x = P.getX();
+        double y = P.getY();
+
+        double X = x/Xs + Xmin;
+        double Y = (ymax - y)/Ys + Ymin;
+
+        return new GPoint(X, Y);
     }
 }

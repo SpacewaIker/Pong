@@ -7,8 +7,23 @@ public class test extends GraphicsProgram{
         new test().start();
     }
     public void run(){
-        String a = "yes";
-
-        println(a.substring(0, 1).toUpperCase() + a.substring(1));
+        number mynum = new number(20);
+        mynum.print();
+        // mynum.number(10);
+    }
+}
+class number{
+    int a;
+    int b;
+    number(int a){
+        this.a = a;
+        this.b = 1;
+    }
+    public void method(){
+        this.a = 100;
+        this.b = 100;
+    }
+    public void print(){
+        System.out.println(a + " " + b);
     }
 }
