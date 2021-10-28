@@ -31,6 +31,8 @@ public class ppBall extends Thread{
     private double x0, y0;
     private double time, vTerminal, v0X, v0Y;
 
+    private boolean running;
+
     /**
      * All the following constructor parameters are set as instance variables.
      * 
@@ -71,8 +73,6 @@ public class ppBall extends Thread{
      * {@code Thread}, multiple balls can run at the same time.
      */
     public void run(){
-        // Simulation:
-
         // Initialize program variables
         x0 = Xinit;
         y0 = Yinit;
@@ -82,7 +82,7 @@ public class ppBall extends Thread{
         v0Y = Vo * Math.sin(theta * Math.PI / 180);
 
         // Simulation loop (update values until hits ground)
-        boolean running = true;
+        running = true;
 
         double X, Y, vX, vY;
         double PE, KEx, KEy;
@@ -173,14 +173,17 @@ public class ppBall extends Thread{
 
                 // Add kinetic energy from the paddle
                 v0X *= ppPaddleXgain;
-                v0Y *= ppPaddleYgain;
+                v0Y *= ppPaddleYgain * this.rightPaddle.getVelocity().getY();
 
                 // Change y velocity sign if paddle is moving and add extra velocity
                 int sign = this.rightPaddle.getSignVy();
                 if (sign == 1 || sign == -1)
-                    v0Y = Math.abs(v0Y) * sign * Math.sqrt(Math.abs(
-                        this.rightPaddle.getVelocity().getY()));
-                    
+                    v0Y = Math.abs(v0Y) * sign;
+                    /* Cannot just multiply by sign because v0Y might already
+                        be negative (if it was negative before the bounce)*/
+                
+                // Increment number of returns
+                this.myTable.incrementNumReturns();
             }
 
             // Update ball position, plot tick mark at current pos:
@@ -206,6 +209,11 @@ public class ppBall extends Thread{
         dot.setColor(this.color);
         this.gProgram.add(dot);
     }
+    /**
+     * Setter for the right {@code ppPaddle}.
+     * 
+     * @param paddle The right paddle
+     */
     public void setRightPaddle(ppPaddle paddle){
         this.rightPaddle = paddle;
     }

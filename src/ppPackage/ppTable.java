@@ -17,6 +17,10 @@ import java.awt.Color;
 public class ppTable {
     private ppSim gProgram;
 
+    // Number of returns and label
+    private int numberReturns = 0;
+    private GLabel returnsLabel;
+
     /**
      * The constructor parameter is set as an instance variable. The parameter
      * and "mode" {@code GLabel}s are instantiated. The walls and floor are
@@ -40,6 +44,10 @@ public class ppTable {
             final GLabel mesgModeLabel = createGLabel(
                 "MESSAGES ENABLED", 800, YHEIGHT + 60, new Color(0, 180, 0));// dark green
         }
+        
+        // Label for number of returns:
+        this.returnsLabel = createGLabel(
+            "Number of returns: ", 100, YHEIGHT + 100, Color.BLACK);
 
         // Create walls:
         // Create ground plane
@@ -74,19 +82,18 @@ public class ppTable {
         return myGLabel;
     }
     /**
-     * Creates a GLabel with a font size of 24 pt and a black font color.
-     * The GLabel is also added to the {@code gProgram}.
+     * Getter for the {@code ppTable} display/canvas.
      * 
-     * @param label The GLabel's label
-     * @param x The x position of the GLabel
-     * @param y The y position of the GLabel
-     * 
-     * @return The created GLabel
+     * @return The {@code ppSim} instance serving as a display.
      */
-    private GLabel createGLabel(String label, int x, int y){
-        return createGLabel(label, x, y, Color.BLACK);
-    }
     public ppSim getDisplay(){
         return this.gProgram;
+    }
+    /**
+     * Increments the number of returns of the {@code returnsLabel}
+     */
+    public void incrementNumReturns(){
+        this.returnsLabel.setLabel(
+            "Number of returns: " + ++this.numberReturns);
     }
 }

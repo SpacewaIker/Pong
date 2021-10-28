@@ -52,9 +52,12 @@ public class ppSim extends GraphicsProgram{
 
         // Mouse listener and random generator
         addMouseListeners();
+        addKeyListeners();
         RandomGenerator rgen = RandomGenerator.getInstance();
-        rgen.setSeed(System.currentTimeMillis());
-        // rgen.setSeed(RSEED);
+        if (TRUERANDOM)
+            rgen.setSeed(System.currentTimeMillis());
+        else
+            rgen.setSeed(RSEED);
 
         // Create table:
         this.myTable = new ppTable(this);
@@ -89,6 +92,10 @@ public class ppSim extends GraphicsProgram{
         double PaddleY = Pm.getY();
         myPaddle.setLocation(new GPoint(PaddleX, PaddleY));
     }
+    /**
+     * Resets the ppSim. New {@code ppBall}, {@code ppTable}, and {@code ppPaddle}
+     * objects are created
+     */
     public void reset(){
         waitForClick();
         this.run();

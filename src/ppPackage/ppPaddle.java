@@ -52,7 +52,7 @@ public class ppPaddle extends Thread{
             this.Vy = (Y - lastY)/TICK;
             lastX = X;
             lastY = Y;
-            this.myTable.getDisplay().pause(TICK * TSCALE);
+            this.myTable.getDisplay().pause(2 * TICK * TSCALE);
         }
     }
     /**
@@ -135,7 +135,6 @@ public class ppPaddle extends Thread{
         // Conditions in X
         boolean notBefore = X >= this.X - ppPaddleW/2;
         boolean notBeyond = X < ppTableXlen;
-        // boolean notBeyond = X < this.X + ppPaddleW/2;
 
         return notOver && notUnder && notBefore && notBeyond;
     }

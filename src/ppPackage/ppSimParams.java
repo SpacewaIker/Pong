@@ -1,5 +1,4 @@
 package ppPackage;
-import java.lang.invoke.CallSite;
 
 import acm.graphics.GPoint;
 
@@ -13,6 +12,7 @@ import acm.graphics.GPoint;
  */
 public class ppSimParams {
     // Booleans for testing and debugging and other modes
+    public static final boolean TRUERANDOM = true;
     public static final boolean SLOW = false;
     public static final boolean SUPERSLOW = false;
     public static final boolean MESG = true;
@@ -71,7 +71,7 @@ public class ppSimParams {
     static final double ppPaddleXinit = XwallR - ppPaddleW/2;
     static final double ppPaddleYinit = Yinit;
     static final double ppPaddleXgain = 2;
-    static final double ppPaddleYgain = 1.5;
+    static final double ppPaddleYgain = 1;
 
     // Parameters used by ppSim
     static final double YinitMAX = 0.75 * Ymax;
@@ -80,7 +80,7 @@ public class ppSimParams {
     static final double eLossMIN = 0.2;
     static final double VoMAX = 5;
     static final double VoMIN = 5;
-    static final double thetaMAX = 45;
+    static final double thetaMAX = 20;
     static final double thetaMIN = 0;
     // Random number generator seed
     static final long RSEED = 8976232;
