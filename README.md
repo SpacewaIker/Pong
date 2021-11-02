@@ -16,5 +16,12 @@ and will only have to be modified slightly.
 Using OOP also allows for multiple balls bouncing at the same time, which was
 impossible in the way that the first program was written.
 
+## 3. Simulation of a ping-pong ball with a paddle
+
+Now, in addition to the bouncing ping-pong ball, the right wall is replaced
+by a movable paddle. The paddle follows the user's mouse movement. It is
+essentially just like the full game of pong, except that the player plays
+alone, against a "wall".
+
 ...
 *Project is underway, more to come*

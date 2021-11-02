@@ -173,6 +173,7 @@ public class ppBall extends Thread{
 
                 // Add kinetic energy from the paddle
                 v0X *= ppPaddleXgain;
+                // v0Y *= ppPaddleYgain;
                 v0Y *= ppPaddleYgain * this.rightPaddle.getVelocity().getY();
 
                 // Change y velocity sign if paddle is moving and add extra velocity

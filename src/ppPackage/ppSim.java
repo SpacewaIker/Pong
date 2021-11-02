@@ -52,7 +52,6 @@ public class ppSim extends GraphicsProgram{
 
         // Mouse listener and random generator
         addMouseListeners();
-        addKeyListeners();
         RandomGenerator rgen = RandomGenerator.getInstance();
         if (TRUERANDOM)
             rgen.setSeed(System.currentTimeMillis());
