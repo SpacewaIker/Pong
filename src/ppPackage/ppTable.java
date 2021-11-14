@@ -1,9 +1,11 @@
 package ppPackage;
 
 import static ppPackage.ppSimParams.*;
-import acm.graphics.GLabel;
 import acm.graphics.GRect;
+
 import java.awt.Color;
+import javax.swing.JLabel;
+import javax.swing.JButton;
 
 /**
  * A class representing the ping pong table on which the {@code ppBall} will
@@ -18,8 +20,12 @@ public class ppTable {
     private ppSim gProgram;
 
     // Number of returns and label
-    private int numberReturns = 0;
-    private GLabel returnsLabel;
+    private int rightPoints = 0;
+    private JLabel rightPointsLabel;
+    private JButton rightName;
+    private int leftPoints = 0;
+    private JLabel leftPointsLabel;
+    private JButton leftName;
 
     /**
      * The constructor parameter is set as an instance variable. The parameter
@@ -32,54 +38,30 @@ public class ppTable {
     public ppTable(ppSim GProgram){
         this.gProgram = GProgram;
 
-        // Debug/test labels:
-        if (SUPERSLOW){
-            final GLabel slowModeLabel = createGLabel(
-                "SUPERSLOW MODE", 800, YHEIGHT + 140, Color.BLUE);
-        } else if (SLOW){
-            final GLabel slowModeLabel = createGLabel(
-                "SLOW MODE", 800, YHEIGHT + 140, Color.BLUE);
-        }
-        if (MESG){
-            final GLabel mesgModeLabel = createGLabel(
-                "MESSAGES ENABLED", 800, YHEIGHT + 60, new Color(0, 180, 0));// dark green
-        }
-        
-        // Label for number of returns:
-        this.returnsLabel = createGLabel(
-            "Number of returns: ", 100, YHEIGHT + 100, Color.BLACK);
+        // Scoreboard
+        leftName = new JButton("Agent");
+        leftName.setActionCommand("setLeftName");
+        leftName.setFont(FONT_L);
+        this.gProgram.add(leftName, "North");
 
-        // Create walls:
-        // Create ground plane
-        final GRect gPlane = new GRect(0, YHEIGHT, XWIDTH + OFFSET, 3);
-        gPlane.setColor(Color.BLACK);
-        gPlane.setFilled(true);
-        this.gProgram.add(gPlane);
-        
-        // Create left wall
-        final GRect lWallPlane = new GRect(XwallL * Xs, 0, 1, YHEIGHT);
-        lWallPlane.setColor(Color.BLUE);
-        lWallPlane.setFilled(true);
-        this.gProgram.add(lWallPlane);
-    }
-    /**
-     * Creates a GLabel with a font size of 24 pt. The GLabel is also added to
-     * the {@code gProgram}.
-     * 
-     * @param label The GLabel's label
-     * @param x The x position of the GLabel
-     * @param y The y position of the GLabel
-     * @param color The GLabel's color
-     * 
-     * @return The created GLabel
-     */
-    private GLabel createGLabel(String label, int x, int y, Color color){
-        GLabel myGLabel = new GLabel(label, x, y);
-        myGLabel.setFont("-24");
-        myGLabel.setColor(color);
+        leftPointsLabel = new JLabel("0");
+        leftPointsLabel.setFont(FONT_L);
+        this.gProgram.add(leftPointsLabel, "North");
 
-        this.gProgram.add(myGLabel);
-        return myGLabel;
+        JLabel separator = new JLabel("  |  ");
+        separator.setFont(FONT_L);
+        this.gProgram.add(separator, "North");
+
+        rightName = new JButton("Human");
+        rightName.setActionCommand("setRightName");
+        rightName.setFont(FONT_L);
+        this.gProgram.add(rightName, "North");
+
+        rightPointsLabel = new JLabel("0");
+        rightPointsLabel.setFont(FONT_L);
+        this.gProgram.add(rightPointsLabel, "North");
+
+        newScreen();
     }
     /**
      * Getter for the {@code ppTable} display/canvas.
@@ -92,8 +74,50 @@ public class ppTable {
     /**
      * Increments the number of returns of the {@code returnsLabel}
      */
-    public void incrementNumReturns(){
-        this.returnsLabel.setLabel(
-            "Number of returns: " + ++this.numberReturns);
+    public void incrementRightPoints(){
+        this.rightPointsLabel.setText(
+            Integer.toString(++this.rightPoints));
+    }
+    /**
+     * Increments the number of returns of the {@code returnsLabel}
+     */
+    public void incrementLeftPoints(){
+        this.leftPointsLabel.setText(
+            Integer.toString(++this.leftPoints));
+    }
+    /**
+     * Setter method for the left player's name
+     * 
+     * @param name The name to be set
+     */
+    public void setLeftName(String name){
+        this.leftName.setText(name);
+    }
+    /**
+     * Setter method for the right player's name
+     * 
+     * @param name The name to be set
+     */
+    public void setRightName(String name){
+        this.rightName.setText(name);
+    }
+    /**
+     * Clears the scoreboard by setting all points to 0.
+     */
+    public void clearScoreboard(){
+        this.leftPoints = 0;
+        this.rightPoints = 0;
+        this.leftPointsLabel.setText("0");
+        this.rightPointsLabel.setText("0");
+    }
+    /**
+     * Creates a new screen: the ground plane is created and added.
+     */
+    public void newScreen(){
+        // Create ground plane
+        final GRect gPlane = new GRect(0, YHEIGHT, XWIDTH + XOFFSET, 3);
+        gPlane.setColor(Color.BLACK);
+        gPlane.setFilled(true);
+        this.gProgram.add(gPlane);
     }
 }

@@ -1,6 +1,7 @@
 package ppPackage;
 
 import acm.graphics.GPoint;
+import java.awt.Font;
 
 /**
  * This class includes most constant parameters needed for this project.
@@ -11,21 +12,23 @@ import acm.graphics.GPoint;
  * @author SpacewaIker
  */
 public class ppSimParams {
-    // Booleans for testing and debugging and other modes
-    public static final boolean TRUERANDOM = true;
-    public static final boolean SLOW = false;
-    public static final boolean SUPERSLOW = false;
-    public static final boolean MESG = true;
-    public static final int STARTDELAY = 1000;
+    public static final Font FONT_XS = new Font("SansSerif", 0, 15);
+    public static final Font FONT_S = new Font("SansSerif", 0, 20);
+    public static final Font FONT_L = new Font("SansSerif", 0, 30);
+    public static final Font FONT_XL = new Font("SansSerif", 0, 80);
 
     // Screen size parameters (in pixels)
-    public static final int XWIDTH = 1280;
-    public static final int YHEIGHT = 600;
-    public static final int OFFSET = 200;
-    /* The WIDTH and HEIGHT final parameters already exist inside ImageObserver.
-    When ppSim used the WIDTH and HEIGHT parameters with resize() it used the
-    ImageObserver.WIDTH and ImageOberver.HEIGHT parameters instead. Hence,
-    the above WIDTH and HEIGHT parameter names had to be changed. */
+    public static final int XWIDTH = 1300;
+    public static final int YHEIGHT = 650;
+    public static final int XOFFSET = 25;
+    public static final int YOFFSET = 200;
+    
+    // Color chooser screen parameters
+    public static final int COLORWIDTH = 450;
+    public static final int COLORHEIGHT = 400;
+    public static final int HGAP = 30;
+    public static final int VGAP = 20;
+    public static final String[] COLORCHOICES = {"Red", "Blue", "Green"};
 
     // Ping-pong table parameters (in meters)
     public static final double ppTableXlen = 2.74;
@@ -59,23 +62,34 @@ public class ppSimParams {
     public static final double Xinit = XwallL;
     public static final double Yinit = Ymax/2;
 
-    public static final int PD = 1;
-    // Time scale: if slow, the simulation runs 100 times slower
-    // public static final double TSCALE = (SLOW) ? 1000*100 : 1000;
-    public static final double TSCALE = (SUPERSLOW) ? 100000 : (SLOW) ? 10000 : 1000;
+    public static final double VoxMAX = 10;
 
+    public static final int PD = 1;
 
     // Paddle parameters
     static final double ppPaddleH = 8 * 2.54/100;
     static final double ppPaddleW = 0.5 * 2.54/100;
     static final double ppPaddleXinit = XwallR - ppPaddleW/2;
     static final double ppPaddleYinit = Yinit;
-    static final double ppPaddleXgain = 2;
-    static final double ppPaddleYgain = 1;
+    static final double ppPaddleXgain = 1.4;
+    static final double ppPaddleYgain = 1.5;
+
+    static final double agentPaddleXinit = XwallL - ppPaddleW/2;
+    static final double agentPaddleYinit = Yinit;
+    static final double agentPaddleXgain = 1.4;
+    static final double agentPaddleYgain = 1.5;
+
+    static final int lagSliderMin = 1;
+    static final int lagSliderInit = 15;
+    static final int lagSliderMax = 60;
+
+    static final int timeSliderMin = 100;
+    static final int timeSliderInit = 1500;
+    static final int timeSliderMax = 5000;
 
     // Parameters used by ppSim
-    static final double YinitMAX = 0.75 * Ymax;
-    static final double YinitMIN = 0.25 * Ymax;
+    static final double YinitMAX = 0.8 * Ymax;
+    static final double YinitMIN = 0.2 * Ymax;
     static final double eLossMAX = 0.2;
     static final double eLossMIN = 0.2;
     static final double VoMAX = 5;
@@ -84,6 +98,31 @@ public class ppSimParams {
     static final double thetaMIN = 0;
     // Random number generator seed
     static final long RSEED = 8976232;
+
+    // Would use text block for the follwing with Java 15+
+    static final String HELPSTRING = (
+        "<html><b>Help Dialog</b><br>" +
+        "With each new serve, click on the simulation window to start the simulation.<br><br>" +
+        "Below is a description of each button and associated key.<br>The " +
+        "brackets indicate the hotkey (if empty, no hotkey is associated).<br><br>" +
+        "<br><u>Top buttons:</u><br><br>" +
+        "[ ] Left color: Choose the left paddle color<br>" +
+        "[ ] Ball color: Choose the ball color<br>" +
+        "[ ] Right color: Choose the right paddle color<br>" +
+        "[ ] Agent: Rename the left player.<br>" +
+        "[ ] Human: Rename the right player.<br>" +
+        "<br><u>Bottom buttons:</u><br><br>" +
+        "[C] Clear: Clear the scoreboard.<br>" + 
+        "[N] New Serve: Request a new serve from the left player.<br>" +
+        "[T] Trace: Toggle button. Adds a trace to the ball.<br>" + 
+        "[M] mesg: Toggle button. Prints debug messages in the console output.<br>" + 
+        "[Q] Quit: Exits the program.<br>" +
+        "[R/L arrows] t slider: Slider controlling the simulation speed.<br>" +
+        "[ ] rtime: Resets the time slider.<br>" +
+        "[U/D arrows] lag slider: Slider controlling the left player's reaction speed.<br>" +
+        "[ ] rlag: Resets the lag slider.<br>" +
+        "[space] Pause: Pauses the simulation.<br>" +
+        "[H] Help: Show this dialog.");
 
     /**
      * Converts world coordinates into simulation (pixel) coordinates

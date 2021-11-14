@@ -9,7 +9,7 @@ import acm.graphics.GPoint;
  * meaning that multiple {@code ppBall}s can run at the same time.
  * 
  * The {@code ppBall} class is based on code written by Prof. Frank Ferrie,
- * as part of the Fall 2021 Assignment 3.
+ * as part of the Fall 2021 Assignment 4.
  * 
  * @author SpacewaIker
  */
@@ -18,6 +18,7 @@ public class ppBall extends Thread{
     private ppSim gProgram;
     private ppTable myTable;
     private ppPaddle rightPaddle;
+    private ppPaddle leftPaddle;
     private double Xinit;
     private double Yinit;
     private double Vo;
@@ -28,7 +29,7 @@ public class ppBall extends Thread{
     private GOval ball;
 
     // Simulation parameters
-    private double x0, y0;
+    private double x0, y0, X, Y, vX, vY;
     private double time, vTerminal, v0X, v0Y;
 
     private boolean running;
@@ -42,6 +43,7 @@ public class ppBall extends Thread{
      * @param theta The launch angle of the ball (in degrees, from x+ axis)
      * @param eLoss The energy loss coefficient (in interval (0, 1))
      * @param color The color of the ball
+     * @param myTable The {@code ppTable} on which the ball will go
      * @param GProgram The surface/canvas/program that must be paused
      */
     public ppBall(double Xinit, double Yinit, double Vo, double theta,
@@ -55,6 +57,9 @@ public class ppBall extends Thread{
         this.theta = theta;
         this.eLoss = eLoss;
         this.color = color;
+
+        this.y0 = Yinit;
+        this.x0 = Xinit;
 
         // Create the ball
         GPoint p = W2S(new GPoint(Xinit, Yinit));
@@ -84,10 +89,20 @@ public class ppBall extends Thread{
         // Simulation loop (update values until hits ground)
         running = true;
 
-        double X, Y, vX, vY;
         double PE, KEx, KEy;
+        String server = "left";
 
         while (running){
+            // Simulation sleep
+            this.gProgram.pause(TICK * this.gProgram.getTimeValue());
+
+            // If pause is selected, don't update position
+            if (this.gProgram.getPauseState()){
+                // pause the program for an additional 500ms
+                this.gProgram.pause(500);
+                continue;
+            }
+
             // Update values
             X = v0X * vTerminal / g * (1 - Math.exp(-g * time / vTerminal));
             Y = vTerminal / g * (v0Y + vTerminal) *
@@ -95,8 +110,37 @@ public class ppBall extends Thread{
             vX = v0X * Math.exp(-g * time / vTerminal);
             vY = (v0Y + vTerminal) * Math.exp(-g * time / vTerminal) - vTerminal;
 
-            // Simulation sleep
-            this.gProgram.pause(TICK * TSCALE);
+            // Check if vX goes beyond VoxMAX
+            if (vX > VoxMAX)
+                vX = VoxMAX;
+
+            // Check if y0 + Y goes out of bounds
+            if (y0 + Y > Ymax){
+                running = false;
+                if (this.gProgram.getMESG())
+                    System.out.println("Ball went out of bounds");
+
+                if (server == "right")
+                    this.myTable.incrementLeftPoints();
+                if (server == "left")
+                    this.myTable.incrementRightPoints();
+            }
+            // Check if the ball goes out (right)
+            if (x0 + X > ppTableXlen){
+                running = false;
+                if (this.gProgram.getMESG())
+                    System.out.println("Ball went out to the right");
+                
+                this.myTable.incrementLeftPoints();
+            }
+            // Check if the ball goes out (left)
+            if (x0 + X < 0){
+                running = false;
+                if (this.gProgram.getMESG())
+                    System.out.println("Ball went out to the left");
+
+                this.myTable.incrementRightPoints();
+            }
 
             // Check for collisions & simulation end:
             // Compute energy of the ball
@@ -108,16 +152,8 @@ public class ppBall extends Thread{
             // Check for simulation end via threshold
             if ((KEx + KEy + PE) < ETHR){
                 running = false;
-                if (MESG)
+                if (this.gProgram.getMESG())
                     System.out.println("Energy Threshold reached");
-                this.gProgram.reset();
-            }
-            // Check for simulation end by going out of the screen
-            if (x0 + X > ppTableXlen){
-                running = false;
-                if (MESG)
-                    System.out.println("Ball went out of frame");
-                this.gProgram.reset();
             }
 
             // Collision with floor
@@ -138,7 +174,8 @@ public class ppBall extends Thread{
                 Y = 0;
             }
             // Collision with left wall
-            if (vX < 0 && x0 + X <= XwallL){
+            if (vX < 0 && x0 + X - bSize < agentPaddleXinit &&
+                this.leftPaddle.contact(y0 + Y)){
                 // From energy, compute new velocity
                 v0X = Math.sqrt(2 * KEx / bMass);
                 v0Y = Math.sqrt(2 * KEy / bMass);
@@ -153,9 +190,26 @@ public class ppBall extends Thread{
                 y0 += Y;
                 X = 0;
                 Y = 0;
+
+                // Add kinetic energy from the paddle
+                v0X *= ppPaddleXgain;
+                // v0Y *= ppPaddleYgain;
+                v0Y *= ppPaddleYgain * this.leftPaddle.getVelocity().getY();
+
+                // Change y velocity sign if paddle is moving
+                int sign = this.leftPaddle.getSignVy();
+                if (sign == 1 || sign == -1)
+                    v0Y = Math.abs(v0Y) * sign;
+                    /* Cannot just multiply by sign because v0Y might already
+                        be negative (if it was negative before the bounce)*/
+                
+                // Set server
+                server = "left";
+                
             }
             // Collision with right paddle
-            if (vX > 0 && this.rightPaddle.contact(x0 + X + bSize, y0 + Y)){
+            if (vX > 0 && x0 + X + bSize > ppPaddleXinit &&
+                this.rightPaddle.contact(y0 + Y)){
                 // From energy, compute new velocity
                 v0X = -Math.sqrt(2 * KEx / bMass);
                 v0Y = Math.sqrt(2 * KEy / bMass);
@@ -173,8 +227,11 @@ public class ppBall extends Thread{
 
                 // Add kinetic energy from the paddle
                 v0X *= ppPaddleXgain;
-                // v0Y *= ppPaddleYgain;
-                v0Y *= ppPaddleYgain * this.rightPaddle.getVelocity().getY();
+                double multiplier = Math.pow(
+                    Math.abs(this.rightPaddle.getVelocity().getY()), 1./4);
+                if (multiplier < 1)
+                    multiplier = 1;
+                v0Y *= ppPaddleYgain * multiplier;
 
                 // Change y velocity sign if paddle is moving and add extra velocity
                 int sign = this.rightPaddle.getSignVy();
@@ -183,8 +240,8 @@ public class ppBall extends Thread{
                     /* Cannot just multiply by sign because v0Y might already
                         be negative (if it was negative before the bounce)*/
                 
-                // Increment number of returns
-                this.myTable.incrementNumReturns();
+                // Set server
+                server = "right";
             }
 
             // Update ball position, plot tick mark at current pos:
@@ -193,7 +250,9 @@ public class ppBall extends Thread{
             double ScrX = p.getX();
             double ScrY = p.getY();
             this.ball.setLocation(ScrX, ScrY);
-            trace(ScrX, ScrY);
+
+            if (this.gProgram.getTraceState())
+                trace(ScrX, ScrY);
 
             time += TICK;
         }
@@ -217,5 +276,37 @@ public class ppBall extends Thread{
      */
     public void setRightPaddle(ppPaddle paddle){
         this.rightPaddle = paddle;
+    }
+    /**
+     * Setter for the left {@code ppPaddleAgent}.
+     * 
+     * @param paddle The left paddle
+     */
+    public void setLeftPaddle(ppPaddle paddle){
+        this.leftPaddle = paddle;
+    }
+    /**
+     * Getter for the ball's position
+     * 
+     * @return A {@code GPoint} with the ball's position
+     */
+    public GPoint getPosition(){
+        return new GPoint(this.x0 + this.X, this.y0 + this.Y);
+    }
+    /**
+     * Getter for the ball's velocity
+     * 
+     * @return A {@code GPoint} with the ball's velocity
+     */
+    public GPoint getVelocity(){
+        return new GPoint(this.vX, this.vY);
+    }
+    /**
+     * Setter method for the ball's color.
+     * 
+     * @param color The {@code Color} to set
+     */
+    public void setColor(Color color){
+        this.ball.setColor(color);
     }
 }
